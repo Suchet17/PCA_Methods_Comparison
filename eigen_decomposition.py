@@ -6,9 +6,10 @@ def eigendecomposition(X, k=None):
 
     Parameters
     ----------
-    X : ndarray of shape (n_samples, n_features) - Input data matrix
-    k : int, optional - Number of principal components to keep. 
-        If None, all components will be returned
+    X : ndarray of shape (n_samples, n_features)
+        Input data matrix
+    k : int, optional 
+        Number of principal components to keep. If None, all components will be returned
 
     Returns
     -------
@@ -25,7 +26,7 @@ def eigendecomposition(X, k=None):
     #subtracting the mean of each feature
     X_centred = X - np.mean(X, axis=0) 
 
-    #covariance matric
+    #covariance matrix
     n_samples = X_centred.shape[0]
     covariance_matrix = (1 / (n_samples - 1 )) * X_centred.T @ X_centred
 
