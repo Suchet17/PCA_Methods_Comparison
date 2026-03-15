@@ -13,11 +13,11 @@ PCA linearly transforms a high-dimensional set of correlated features into a sma
 
 ## Implementations of PCA
 
-- PCA by Eigendecomposition of Covariance Matrix\
-- PCA by Singular Value Decomposition\
-- Kernel PCA\
-- Randomized PCA\
-- Incremental PCA\
+- PCA by Eigendecomposition of Covariance Matrix
+- PCA by Singular Value Decomposition
+- Kernel PCA
+- Randomized PCA
+- Incremental PCA
 
 ## Tasks
 
