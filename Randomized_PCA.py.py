@@ -2,9 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 
-# -------------------------------
+
 # STANDARDIZATION (SAFE)
-# -------------------------------
+
 def standardize(X):
     mean = np.mean(X, axis=0)
     std = np.std(X, axis=0)
@@ -12,9 +12,9 @@ def standardize(X):
     return (X - mean) / std
 
 
-# -------------------------------
+
 # NORMAL PCA (USING SVD)
-# -------------------------------
+
 def normal_pca(X, k):
     X_centered = X - np.mean(X, axis=0)
 
@@ -34,9 +34,9 @@ def normal_pca(X, k):
     return U_k, S_k, Vt_k, evr
 
 
-# -------------------------------
+
 # RANDOMIZED PCA
-# -------------------------------
+
 def randomized_pca(X, k, oversample=5):
     X_centered = X - np.mean(X, axis=0)
     n, d = X_centered.shape
@@ -62,7 +62,7 @@ def randomized_pca(X, k, oversample=5):
     S_k = S[:k]
     Vt_k = Vt[:k, :]
 
-    # IMPORTANT: Use original data for total variance
+    # Use original data for total variance
     _, S_full, _ = np.linalg.svd(X_centered, full_matrices=False)
     variance = S_k**2
     total_variance = np.sum(S_full**2)
@@ -71,9 +71,9 @@ def randomized_pca(X, k, oversample=5):
     return U_k, S_k, Vt_k, evr
 
 
-# -------------------------------
+
 # GENERATE DATA
-# -------------------------------
+
 np.random.seed(42)
 
 n = 1000   # samples
@@ -92,25 +92,22 @@ X[:, 2] = X[:, 0] * -1.5 + np.random.randn(n) * 0.1
 X_std = standardize(X)
 
 
-# -------------------------------
+
 # RUN RANDOMIZED PCA
-# -------------------------------
+
 start = time.time()
 X_rpca, S_rpca, Vt_rpca, evr_rpca = randomized_pca(X_std, k)
 rpca_time = time.time() - start
 
 
-# -------------------------------
 # RUN NORMAL PCA
-# -------------------------------
 start = time.time()
 X_pca, S_pca, Vt_pca, evr_pca = normal_pca(X_std, k)
 pca_time = time.time() - start
 
 
-# -------------------------------
 # PRINT RESULTS
-# -------------------------------
+
 print("\nPrincipal Components (Randomized PCA):\n", Vt_rpca)
 print("\nPrincipal Components (Normal PCA):\n", Vt_pca)
 
@@ -127,9 +124,8 @@ print(f"Normal PCA Time: {pca_time:.5f} sec")
 print("\nDifference in EVR:", np.abs(evr_pca - evr_rpca))
 
 
-# -------------------------------
 # VISUALIZATION
-# -------------------------------
+
 fig, ax = plt.subplots(1, 2, figsize=(12, 5))
 
 # Randomized PCA
