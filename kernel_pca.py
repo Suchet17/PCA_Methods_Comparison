@@ -4,6 +4,7 @@ from scipy.linalg import eigh
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import KernelPCA, PCA
 from generate_data import get_correlated_data, get_uncorrelated_data, get_lowrank_data
+from generate_hyperspheres import make_concentric_shells
 import matplotlib.pyplot as plt
 
 def kpca(X, gamma, k=None):
@@ -71,69 +72,63 @@ def kpca(X, gamma, k=None):
   return lambdas, alphas, explained_variance_ratio
 
 
-# IMPLEMENTATION
-n = 1000
-k = 100
-noise = 0.05
-gamma = 0.00001
+if __name__ == "__main__":
+  
+  # IMPLEMENTING KPCA
+  # generating data
+  n = 1500
+  X, y = make_concentric_shells(n_samples=n, radii=[0.3, 0.6, 0.9])
 
-# generating correlated data
-corr_data = get_correlated_data(n=n, k=k, noise=noise, random_state=42)
-X = corr_data['data']
+  # applying k_pca
+  k = 2 
+  gamma = 2
+  noise = 0.03
+  kpca_eigenval, kpca_projections, evr_kpca = k_pca(X, gamma, k)
 
-# standardising the data 
-X_std = StandardScaler().fit_transform(X)
-
-# applying kpca
-lambdas, alphas, evr = kpca(X_std, gamma, k)
-
-## for comparison with sklearn methods
-
-# PCA: sklearn.decomposition.PCA
-pca = PCA(n_components=2)
-X_pca_sk = pca.fit_transform(X_std)
-evr_pca = pca.explained_variance_ratio_
-
-# KPCA: sklearn.decomposition.KernelPCA
-# getting all eigenvalues 
-transformer = KernelPCA(kernel='rbf', 
+  # applying sklearn.decomposition.PCA
+  # getting all eigenvalues
+  sk_kpca_all_components = KernelPCA(kernel='rbf',
                         gamma=gamma)
-X_std_transformed = transformer.fit_transform(X_std)
-eigenvals = transformer.eigenvalues_
-total_variance = np.sum(eigenvals)
+  sk_kpca_projections_all = sk_kpca_all_components.fit_transform(X)
+  sk_eigenval_all = sk_kpca_all_components.eigenvalues_
+  total_variance = np.sum(sk_eigenval_all)
 
-# getting k components only 
-transformer_2 = KernelPCA(n_components=k, 
-                          kernel='rbf', 
+  # getting k components only
+  sk_kpca = KernelPCA(n_components=k,
+                          kernel='rbf',
                           gamma=gamma)
-X_transformed_2 = transformer_2.fit_transform(X_std)
-eigenvals_2 = transformer_2.eigenvalues_
+  sk_kpca_projections = sk_kpca.fit_transform(X)
+  sk_eigenvals = sk_kpca.eigenvalues_
 
-# explained variance ratio 
-evr_kpca = eigenvals_2/total_variance
+  # explained variance ratio
+  evr_sk_kpca = sk_eigenvals/total_variance
 
+  # applying sklearn.decomposition.PCA
+  pca = PCA(n_components=k)
+  pca_projections = pca.fit_transform(X)
+  evr_pca = pca.explained_variance_ratio_
 
-# VISUALISING 
-fig, ax = plt.subplots(1, 3, figsize=(18,5))
+  # VISUALISING 
+  fig, ax = plt.subplots(1, 3, figsize=(15,5))
 
-# using sklearn.decomposition.PCA
-ax[0].scatter(X_pca_sk[:, 0], X_pca_sk[:, 1], alpha=0.5, color='DarkSlateBlue', edgecolor='k')
-ax[0].set_title(f"Sklearn PCA\nPC1: {evr_pca[0]:.2%}, PC2: {evr_pca[1]:.2%}")
-ax[0].set_xlabel("PC1")
-ax[0].set_ylabel("PC2")
+  # using manual k_pca method
+  ax[0].scatter(kpca_projections[:,0], kpca_projections[:,1], c=y, cmap='viridis', alpha=0.6, edgecolors='k')
+  ax[0].set_title(f"Manual implementation of KPCA (RBF kernel)\nPC1: {evr_kpca[0]:.2%}, PC2: {evr_kpca[1]:.2%}")
 
-# using manual kpca method
-ax[1].scatter(alphas[:, 0], alphas[:, 1], c='DarkSlateBlue', alpha=0.5, edgecolor='k')
-ax[1].set_title(f"Manual KPCA\nPC1: {evr[0]:.2%}, PC2: {evr[1]:.2%}")
-ax[1].set_xlabel("PC1")
-ax[1].set_ylabel("PC2")
+  # using sklearn.decomposition.KernelPCA
+  ax[1].scatter(sk_kpca_projections[:,0], sk_kpca_projections[:,1], c=y, cmap='viridis', alpha=0.6, edgecolors='k')
+  ax[1].set_title(f"Sklearn implementation of KPCA (RBF kernel)\nPC1: {evr_sk_kpca[0]:.2%}, PC2: {evr_sk_kpca[1]:.2%}")
 
-# using sklearn.decomposition.KernelPCA
-ax[2].scatter(X_transformed_2[:, 0], X_transformed_2[:, 1], c='DarkSlateBlue', alpha=0.5, edgecolor='k')
-ax[2].set_title(f"Sklearn KernelPCA\nPC1: {evr_kpca[0]:.2%}, PC2: {evr_kpca[1]:.2%}")
-ax[2].set_xlabel("PC1")
-ax[2].set_ylabel("PC2")
+  # using sklearn.decomposition.PCA
+  image = ax[2].scatter(pca_projections[:,0], pca_projections[:,1], c=y, cmap='viridis', alpha=0.6, edgecolors='k')
+  ax[2].set_title(f"Sklearn implementation of PCA\nPC1: {evr_pca[0]:.2%}, PC2: {evr_pca[1]:.2%}")
 
-fig.suptitle(f"Implementation for correlated data\nn: {n}, k: {k}, noise: {noise}, gamma: {gamma}")
+  for i in range(3):
+    ax[i].set_xlabel("PC1")
+    ax[i].set_ylabel("PC2")
+
+  fig.colorbar(image, ax=ax[2], label='Sphere Index (Inner to Outer)')
+
+fig.suptitle(f"Data: concentric n-dimensional hypersphers\nn: {n}, k: {k}, noise: {noise}, gamma: {gamma}")
 plt.tight_layout()
 plt.show()
