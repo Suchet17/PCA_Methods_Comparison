@@ -1,9 +1,7 @@
 import numpy as np
 from scipy.spatial.distance import pdist, squareform
 from scipy.linalg import eigh
-from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import KernelPCA, PCA
-from generate_data import get_correlated_data, get_uncorrelated_data, get_lowrank_data
 from generate_hyperspheres import make_concentric_shells
 import matplotlib.pyplot as plt
 
