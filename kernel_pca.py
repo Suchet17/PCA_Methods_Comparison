@@ -7,7 +7,7 @@ from generate_data import get_correlated_data, get_uncorrelated_data, get_lowran
 from generate_hyperspheres import make_concentric_shells
 import matplotlib.pyplot as plt
 
-def kpca(X, gamma, k=None):
+def k_pca(X, gamma, k=None):
   """
   Kernel PCA implementation (from first principles), using RBF kernel.
 
@@ -29,6 +29,10 @@ def kpca(X, gamma, k=None):
     represent data projected onto the new principle component axes
   lambdas : list
     The eigenvalues corresponding to the selected principle components
+
+  Author
+  ------
+  Anshita
   """
 
   ## computing and centering kernel matrix K
