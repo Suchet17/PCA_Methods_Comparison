@@ -18,6 +18,7 @@ PCA linearly transforms a high-dimensional set of correlated features into a sma
 - Kernel PCA
 - Randomized PCA
 - Incremental PCA
+- Sparse PCA
 
 ## Tasks
 
