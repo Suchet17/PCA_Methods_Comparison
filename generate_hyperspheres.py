@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 
 def make_concentric_shells(n_samples=1500, n_dims=10, radii=None, noise=0.03):
     """
@@ -43,6 +42,10 @@ def make_concentric_shells(n_samples=1500, n_dims=10, radii=None, noise=0.03):
     >>> X, y = make_multi_hyperspheres(n_samples=500, n_dims=5, radii=[1, 5])
     >>> X.shape
     (500, 5)
+
+    Author
+    ------
+    Anshita
     """
 
     if radii is None:
