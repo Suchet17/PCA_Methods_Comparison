@@ -128,7 +128,7 @@ if __name__ == "__main__":
   configs = {"Kernel PCA" : {"func": kpca_wrapper, "kwargs": {"gamma" : gamma}}}
 
   # with n
-  sample_sizes = [100, 200, 500, 1000, 2000, 5000]
+  sample_sizes = [100, 200, 500, 1000, 2000]
   n_dims = 10
   sample_results = evaluate_scaling(method_configs=configs, sizes=sample_sizes, vary="samples", n_features=n_dims)
   print("\nVisualisng scaling behaviour as dataset size (n) increases:")
