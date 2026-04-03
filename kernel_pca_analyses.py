@@ -71,11 +71,24 @@ if __name__ == "__main__":
   # 2. NUMERICAL STABILITY
   print("\nEvaluating numerical stability...\n")
   noise_range = np.logspace(-3, -1, 6)
+  proj_dist = []
+  ev_dist = []
 
   for epsilon in noise_range:
     stability_result = evaluate_stability(kpca_wrapper, X, noise_level=epsilon, n_components=n_components, gamma=gamma)
     print(f"Noise : {epsilon}\nProjection ditance : {stability_result["projection_distance"]:.6f}\nExplained variance distance : {stability_result["explained_variance_distance"]:.6f}\n")
     # note : other metrics have not been computed for kernel pca
+
+    proj_dist.append(stability_result["projection_distance"])
+    ev_dist.append(stability_result["explained_variance_distance"])
+  
+  plt.plot(noise_range, proj_dist, marker='.', c='DarkSlateBlue', label="Projection")
+  plt.plot(noise_range, ev_dist, marker='.', c='DodgerBlue', label="Explained variance")
+  plt.xlabel("Distance in metric (due to noise)")
+  plt.ylabel("Noise")
+  plt.grid()
+  plt.legend()
+  plt.show()
 
   # 3. SCALING BEHAVIOUR
   print("\nEvaluating scaling behaviour...")
