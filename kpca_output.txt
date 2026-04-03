@@ -1,0 +1,64 @@
+
+Manual Kernel PCA vs Sklearn Reference
+--------------------------------------------------------------------------------
+projection_distance                : 7.192083152718529e-15
+component_distance                 : N/A
+subspace_similarity                : N/A
+subspace_overlap                   : N/A
+explained_variance_distance        : 1.644839302510856e-15
+test_reconstruction_error          : N/A
+reference_reconstruction_error     : N/A
+reconstruction_error_gap           : N/A
+--------------------------------------------------------------------------------
+
+Kernel PCA runtime (Dataset: n-dimensional hyperspheres;
+n : 1000, d : 10, noise : 0.01, repeats : 10)
+----------------------------------------
+Mean Time   : 2.903756 sec
+Median Time : 2.799003 sec
+Std Dev     : 0.698006 sec
+Min Time    : 2.009037 sec
+Max Time    : 4.028075 sec
+----------------------------------------
+
+Kernel PCA memory usage (Dataset: n-dimensional hyperspheres;
+n : 1000, d : 10, noise : 0.01, repeats : 10)
+--------------------------------------------------
+Mean Peak Memory : 38.469924 MiB
+Std Dev          : 0.000009 MiB
+Min Peak Memory  : 38.469921 MiB
+Max Peak Memory  : 38.469952 MiB
+--------------------------------------------------
+
+Evaluating numerical stability...
+
+Noise : 1e-06
+Projection ditance : 0.000001
+Explained variance distance : 0.000000
+
+Noise : 1e-05
+Projection ditance : 0.000012
+Explained variance distance : 0.000001
+
+Noise : 0.0001
+Projection ditance : 0.000120
+Explained variance distance : 0.000008
+
+Noise : 0.001
+Projection ditance : 0.001198
+Explained variance distance : 0.000077
+
+Noise : 0.01
+Projection ditance : 0.011763
+Explained variance distance : 0.000668
+
+Noise : 0.1
+Projection ditance : 0.106091
+Explained variance distance : 0.014676
+
+
+Evaluating scaling behaviour...
+
+Visualisng scaling behaviour as dataset size (n) increases:
+
+Visualising scaling behaviour as dimensionality (d) increases:
