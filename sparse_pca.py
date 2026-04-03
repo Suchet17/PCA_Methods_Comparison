@@ -11,7 +11,7 @@ from pca_time import measure_time, compare_times
 from pca_memory import measure_memory, compare_memory
 from pca_correctness import evaluate_correctness
 from pca_stability import evaluate_stability
-from pca_scaling import evaluate_scaling
+from pca_scaling import evaluate_scaling, plot_scaling
 
 def soft_threshold(x, alpha):
     """
@@ -263,10 +263,19 @@ def run_scaling(n_components=5, alpha=1.0):
     Run scaling analysis for manual Sparse PCA and sklearn SparsePCA.
     """
     method_configs = {
-        "Manual Sparse PCA": {"func": pca_sparse_manual, "kwargs": {"alpha": alpha, "random_state": 42},},
-        "Sklearn SparsePCA": {"func": sklearn_sparse_pca_wrapper, "kwargs": {"alpha": alpha, "random_state": 42},},}
-    scaling_samples = evaluate_scaling(method_configs=method_configs, sizes=[100, 300, 500, 1000], vary="samples", n_features=50, n_components=n_components, noise=0.05,)
-    scaling_features = evaluate_scaling(method_configs=method_configs, sizes=[10, 20, 50, 100], vary="features", n_samples=1000, n_components=n_components, noise=0.05)
+        "Manual Sparse PCA": {"func": pca_sparse_manual, "kwargs": {"alpha": alpha, "random_state": 42},},}
+    #    "Sklearn SparsePCA": {"func": sklearn_sparse_pca_wrapper, "kwargs": {"alpha": alpha, "random_state": 42},},}
+    
+    scaling_samples = evaluate_scaling(method_configs=method_configs, sizes=[100, 200, 500, 1000, 2000], vary="samples", n_features=10)
+    
+    plot_scaling(scaling_samples, metric="time", title="Runtime Scaling with Number of Samples", xlabel="Number of samples (n)")
+    plot_scaling(scaling_samples, metric="memory", title="Memory Scaling with Number of Samples", xlabel="Number of samples (n)")
+    
+    scaling_features = evaluate_scaling(method_configs=method_configs, sizes=[2, 5, 10, 20, 50, 100, 200], vary="features", n_samples=500)
+    
+    plot_scaling(scaling_features, metric="time", title="Runtime Scaling with Number of Features", xlabel="Number of features (d)")
+    plot_scaling(scaling_features, metric="memory", title="Memory Scaling with Number of Features", xlabel="Number of features (d)")
+    
     print("\nScaling Results: varying samples")
     print(scaling_samples)
     print("\nScaling Results: varying features")
@@ -274,8 +283,8 @@ def run_scaling(n_components=5, alpha=1.0):
     return scaling_samples, scaling_features
 
 if __name__ == "__main__":
-    experiments = [(1000, 500), (10000, 10), (500, 1000), (100, 1000),]
-    for n, d in experiments:
-        plot_comparison(n, d, noise=0.05, alpha=1.0, random_state=42)
-    run_analysis(n=1000, d=50, n_components=5, alpha=1.0)
+    #experiments = [(1000, 500), (10000, 10), (500, 1000), (100, 1000),]
+    #for n, d in experiments:
+    #    plot_comparison(n, d, noise=0.05, alpha=1.0, random_state=42)
+    #run_analysis(n=1000, d=50, n_components=5, alpha=1.0)
     run_scaling(n_components=5, alpha=1.0)

@@ -11,7 +11,7 @@ from pca_time import measure_time, compare_times
 from pca_memory import measure_memory, compare_memory
 from pca_correctness import evaluate_correctness, print_correctness_result
 from pca_stability import evaluate_stability, print_stability_result
-from pca_scaling import evaluate_scaling
+from pca_scaling import evaluate_scaling, plot_scaling
 
 def pca_svd(X, n_components=2):
     """
@@ -168,11 +168,18 @@ def run_scaling(n_components=5, noise=0.05):
     """
     Run scaling analysis for manual SVD PCA and sklearn PCA.
     """
-    method_configs = {"Manual SVD PCA": {"func": pca_svd, "kwargs": {}}, "Sklearn PCA": {"func": sklearn_pca_wrapper, "kwargs": {}},}
+    method_configs = {"SVD PCA": {"func": pca_svd, "kwargs": {}}}
 
-    scaling_samples = evaluate_scaling(method_configs=method_configs, sizes=[100, 300, 500, 1000], vary="samples", n_features=50, n_components=n_components, noise=noise,)
-    scaling_features = evaluate_scaling(method_configs=method_configs, sizes=[10, 20, 50, 100], vary="features", n_samples=1000, n_components=n_components, noise=noise,)
+    scaling_samples = evaluate_scaling(method_configs=method_configs, sizes=[100, 200, 500, 1000, 2000], vary="samples", n_features=10)
 
+    plot_scaling(scaling_samples, metric="time", title="Runtime Scaling with Number of Samples", xlabel="Number of samples (n)")
+    plot_scaling(scaling_samples, metric="memory", title="Memory Scaling with Number of Samples", xlabel="Number of samples (n)")
+    
+    scaling_features = evaluate_scaling(method_configs=method_configs, sizes=[2, 5, 10, 20, 50, 100, 200], vary="features", n_samples=500)
+    
+    plot_scaling(scaling_features, metric="time", title="Runtime Scaling with Number of Features", xlabel="Number of features (d)")
+    plot_scaling(scaling_features, metric="memory", title="Memory Scaling with Number of Features", xlabel="Number of features (d)")
+    
     print("\nScaling Results: varying samples")
     print(scaling_samples)
     print("\nScaling Results: varying features")
@@ -180,8 +187,8 @@ def run_scaling(n_components=5, noise=0.05):
     return scaling_samples, scaling_features
 
 if __name__ == "__main__":
-    experiments = [(1000, 500), (10000, 10), (500, 1000), (10, 1000),]
-    for n, d in experiments:
-        plot_comparison(n, d)
-    run_analysis(n=1000, d=50, n_components=5)
-    run_scaling(n_components=5, noise=0.05)
+    #experiments = [(1000, 500), (10000, 10), (500, 1000), (10, 1000),]
+    #for n, d in experiments:
+    #    plot_comparison(n, d)
+    #run_analysis(n=1000, d=50, n_components=5)
+    samples, features = run_scaling(n_components=5, noise=0.05)

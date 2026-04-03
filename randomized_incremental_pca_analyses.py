@@ -203,7 +203,7 @@ if __name__ == "__main__":
     }
 
     # Vary n
-    sample_sizes = [100, 200, 500, 1000, 2000, 5000, 10_000, 50_000, 100_000]
+    sample_sizes = [100, 200, 500, 1000, 2000]
     sample_results_rpca = evaluate_scaling(
         method_configs=configs_rpca,
         sizes=sample_sizes, vary="samples", n_features=n_dims,
@@ -215,7 +215,7 @@ if __name__ == "__main__":
                  title="Randomized PCA - Memory vs n", xlabel="No. of samples (n)")
 
     # Vary d
-    feature_sizes = [2, 5, 10, 50, 100, 500, 1000, 2000]
+    feature_sizes = [2, 5, 10, 50, 100, 500]
     feature_results_rpca = evaluate_scaling(
         method_configs=configs_rpca,
         sizes=feature_sizes, vary="features", n_samples=500,
