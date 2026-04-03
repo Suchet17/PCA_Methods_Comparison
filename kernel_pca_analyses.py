@@ -7,6 +7,7 @@ Performance of KPCA is evaluated for different kinds of data sets
  with varying no. of samples (n), features (d), and noise. 
 
 Analyses performed:
+ 0. correctness (with sklearn implementation as reference),
  1. efficiency analysis (time and memory),
  2. numerical stability (effect of noise),
  3. scaling behaviour (with n and d).
@@ -21,11 +22,13 @@ Anshita Singh
 """
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.decomposition import KernelPCA as SklearnKPCA
 
 from kernel_pca import k_pca
 
 from generate_data import get_correlated_data
 from generate_hyperspheres import make_concentric_shells
+from pca_correctness import evaluate_correctness, print_correctness_result
 from pca_memory import measure_memory, print_memory_result
 from pca_time import measure_time, print_time_result
 from pca_stability import evaluate_stability, print_stability_result
@@ -47,8 +50,7 @@ def kpca_wrapper(X, n_components=2, **kwargs):
     
 # execution
 if __name__ == "__main__":
-
-  # 1. EFFICIANCY ANALYSIS
+ 
   # data set (concentric n-dimensional hyperspheres)
   n_samples = 1000
   n_dims = 10
@@ -58,8 +60,38 @@ if __name__ == "__main__":
   # parameters for k_pca
   n_components = 2
   gamma = 2 # has to be adjusted based on dataset 
+ 
+  # 0. CORRECTNESS
+  # wrapper for sklearn (reference) implementation
+  def sklearn_kpca_wrapper(X, n_components=2, **kwargs):
+    gamma = kwargs.get('gamma', 2) 
+    transformer = SklearnKPCA(n_components=n_components, kernel='rbf', gamma=gamma)
+    X_proj = transformer.fit_transform(X)
+    eigenvals = transformer.eigenvalues_
 
-  # time and memory 
+    transformer_all = SklearnKPCA(kernel='rbf', gamma=gamma)
+    X_proj_all = transformer_all.fit_transform(X)
+    sklearn_evr = eigenvals / np.sum(transformer_all.eigenvalues_)
+
+    return {
+        "X_proj": X_proj,
+        "explained_variance_ratio": sklearn_evr, 
+        "components": None,
+        "X_reconstructed": None
+    }
+  # comparing with sklearn implementation
+  results = evaluate_correctness(
+    test_func=kpca_wrapper,
+    reference_func=sklearn_kpca_wrapper,
+    X=X,
+    n_components=n_components,
+    test_kwargs={'gamma': gamma},
+    reference_kwargs={'gamma': gamma})
+  print_correctness_result("Manual Kernel PCA vs Sklearn Reference", results)
+
+ 
+  # 1. EFFICIANCY ANALYSIS
+ 
   n_repeats = 10 # no. of iterations, default=5 
   time_result = measure_time(kpca_wrapper, X, n_components=n_components, gamma=gamma, repeats=n_repeats)
   mem_result = measure_memory(kpca_wrapper, X, n_components=n_components, gamma=gamma, repeats=n_repeats)
@@ -70,7 +102,7 @@ if __name__ == "__main__":
 
   # 2. NUMERICAL STABILITY
   print("\nEvaluating numerical stability...\n")
-  noise_range = np.logspace(-3, -1, 6)
+  noise_range = np.logspace(-6, -1, 6)
   proj_dist = []
   ev_dist = []
 
@@ -81,11 +113,12 @@ if __name__ == "__main__":
 
     proj_dist.append(stability_result["projection_distance"])
     ev_dist.append(stability_result["explained_variance_distance"])
-  
-  plt.plot(noise_range, proj_dist, marker='.', c='DarkSlateBlue', label="Projection")
-  plt.plot(noise_range, ev_dist, marker='.', c='DodgerBlue', label="Explained variance")
-  plt.xlabel("Distance in metric (due to noise)")
-  plt.ylabel("Noise")
+
+  plt.loglog(noise_range, proj_dist, marker='o', c='DarkSlateBlue', label="Projection Distance")
+  plt.loglog(noise_range, ev_dist, marker='s', c='DodgerBlue', label="EVR Distance")
+  plt.xlabel("Noise Level (Epsilon)")
+  plt.ylabel("Error Metric (Distance)")
+  plt.title("Numerical Stability Analysis (Log-Log)")
   plt.grid()
   plt.legend()
   plt.show()
@@ -95,7 +128,7 @@ if __name__ == "__main__":
   configs = {"Kernel PCA" : {"func": kpca_wrapper, "kwargs": {"gamma" : gamma}}}
 
   # with n
-  sample_sizes = [100, 200, 500, 1000, 2000]
+  sample_sizes = [100, 200, 500, 1000, 2000, 5000]
   n_dims = 10
   sample_results = evaluate_scaling(method_configs=configs, sizes=sample_sizes, vary="samples", n_features=n_dims)
   print("\nVisualisng scaling behaviour as dataset size (n) increases:")
