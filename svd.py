@@ -190,5 +190,5 @@ if __name__ == "__main__":
     #experiments = [(1000, 500), (10000, 10), (500, 1000), (10, 1000),]
     #for n, d in experiments:
     #    plot_comparison(n, d)
-    #run_analysis(n=1000, d=50, n_components=5)
-    samples, features = run_scaling(n_components=5, noise=0.05)
+    run_analysis(n=1000, d=50, n_components=5)
+    # samples, features = run_scaling(n_components=5, noise=0.05)
