@@ -41,10 +41,12 @@ def k_pca(X, gamma, k=None):
   # computing K
   K = np.exp(-gamma * sq_dists)
 
-  # centering K to get K_c
-  N = K.shape[0]  #no. of points
-  one_N = np.ones((N,N)) / N  #N x N matrix with entries 1/N
-  K_c = K - np.dot(one_N, K) - np.dot(K, one_N) + np.dot(one_N, np.dot(K, one_N)) 
+  # centering K to get K_c 
+  # instead of making an n x n matrix, the averages are directly subtracted from each element of K for efficiency
+  row_means = np.mean(K, axis=1)
+  col_means = np.mean(K, axis=0)
+  grand_mean = np.mean(K)
+  K_c = K - row_means[:, np.newaxis] - col_means[np.newaxis, :] + grand_mean
 
   ## eigenvalue decomposition
 
