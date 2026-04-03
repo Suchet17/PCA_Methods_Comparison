@@ -1,0 +1,495 @@
+\input{preamble.tex}
+
+% --------------------------------------------------------------------
+% ---- ENTER YOUR PROJECT DETAILS BELOW
+\title{Comparative PCA Methods Analysis}
+
+\author{
+    \small Sadekar Suchet Samir \and
+    \small Debagnik Das \and
+    \small Anshita Singh \and
+    \small Aurokrupa Sahoo
+    }
+
+\rhead{Team 17}
+% --------------------------------------------------------------------
+
+\begin{document}
+\maketitle
+
+% --------------------------------------------------------------------
+\begin{abstract}
+Principal Component Analysis (PCA) is one of the most widely used techniques
+in data science for dimensionality reduction and feature extraction. However,
+different algorithmic implementations of PCA carry significantly different
+computational and memory costs, and their suitability varies with dataset size,
+dimensionality, and data structure. This report presents a systematic,
+evidence-based comparison of six PCA implementations: Eigendecomposition of
+the Covariance Matrix, Singular Value Decomposition (SVD), Kernel PCA,
+Randomized PCA, Incremental PCA, and Sparse PCA. Each method is implemented
+from first principles, verified against Scikit-learn reference implementations,
+and evaluated in terms of theoretical complexity, empirical runtime and memory
+usage, numerical stability under noise, and scaling behaviour across synthetic
+datasets of controlled size and dimensionality. The results provide practical
+guidance on selecting the appropriate PCA technique for large-scale data
+analysis.
+\end{abstract}
+
+% ====================================================================
+\section{Introduction}
+% ====================================================================
+
+Principal Component Analysis (PCA) is a multivariate statistical method that transforms high-dimensional data into a smaller set of uncorrelated variables called principal  components ~\citep{greenacre_pca_2022}. These components are linear combinations of the original features chosen so that the first component captures the greatest variance in the data, the second captures the next greatest variance while remaining orthogonal to the first, and so on. Dimensionality reduction is achieved by retaining only the top $k$ components, projecting the data from $d$ dimensions down to $k$ and iscarding the least informative variation.
+\smallskip
+
+Despite its elegance and widespread applicability, PCA faces significant computational challenges at scale. The two classical approaches --- eigenvalue decomposition (EVD) of the covariance matrix and singular value decomposition (SVD) of the centred data matrix --- require the entire dataset to fit in memory and scale poorly with either the number of observations $n$ or the number of features $d$~\citep{greenacre_pca_2022}. Furthermore, standard PCA is inherently linear, and cannot capture non-linear structure in data lying on curved manifolds or other complex geometric configurations. These limitations have motivated the development of several alternative PCA methods, each offering different computational and representational trade-offs.
+\smallskip 
+
+This project investigates six PCA implementations: PCA by Eigendecomposition of the Covariance Matrix, PCA by SVD, Kernel PCA, Randomized PCA, Incremental PCA, and Sparse PCA. Each method is implemented from first principles in Python and evaluated against Scikit-learn reference implementations ~\citep{pedregosa2011scikit}. The central aim is to analyse systematically how the computational and memory complexity of each method scales with dataset size and dimensionality, to identify the regimes in which each method is preferable, and to provide practical guidance on selecting the appropriate PCA technique for large-scale data analysis.
+\smallskip
+
+To support controlled experimentation, synthetic datasets with configurable numbers of observations and features are generated, covering correlated, uncorrelated, low-rank, and non-linear data distributions. Each implementation is benchmarked for runtime and memory usage, assessed for numerical stability under noise, and compared in terms of metrics such as reconstruction error and explained variance.
+
+% ====================================================================
+\section{Related Work}
+% ====================================================================
+
+PCA was first proposed by~\citet{pearson1901} and later formalised by~\citet{hotelling1933}. The method has since become one of the cornerstones of exploratory data analysis and unsupervised machine learning. A comprehensive treatment of PCA --- including its definition, geometry, biplot interpretation, and variants --- is provided by~\citet{greenacre_pca_2022}, who also discuss the practical limitations of standard EVD and SVD for large datasets and review incremental and randomized approaches.
+\smallskip
+
+The computational bottleneck of standard PCA for large matrices has motivated several lines of work. \citet{halko2011finding} proposed randomized algorithms for low-rank matrix approximation that efficiently estimate the top-$k$ singular vectors without computing a full SVD, achieving substantial speedups for large datasets where only a small number of components are required. Incremental approaches to SVD and PCA, suited to streaming or memory-limited settings, have been developed by several authors~\citep{ross2008incremental, cardot2018online}.
+\smallskip 
+
+Kernel PCA was introduced by~\citet{scholkopf1997kernel} as a nonlinear generalisation of standard PCA. By applying the kernel trick, Kernel PCA performs linear PCA in a high-dimensional feature space implicitly defined by a kernel function, enabling the extraction of non-linear principal components without explicitly computing the feature map. A known limitation is its $O(N^2)$ memory cost and $O(N^3)$ time complexity arising from the $N \times N$ kernel matrix. \citet{zheng2005improved} proposed an improved algorithm that partitions the dataset into subsets and solves a reduced eigenvalue
+problem on a compressed kernel matrix, substantially reducing both time and memory requirements while preserving accuracy.
+\smallskip 
+
+Sparse PCA, which produces principal components with sparse loadings via an L1 penalty, was formalised by~\citet{zou2006sparse} and has been applied
+extensively to high-dimensional biological data where interpretability of the components is important.
+
+% ====================================================================
+\section{Our Contribution}
+% ====================================================================
+
+This work contributes a unified, systematic empirical comparison of six PCA methods implemented from first principles. While individual methods have been studied in isolation in the literature, a direct side-by-side comparison under controlled experimental conditions, with consistent benchmarking methodology and identical synthetic datasets, is less common. Specifically, our contributions are:
+
+\begin{itemize}
+    \item First-principles Python implementations of six PCA methods, each verified against Scikit-learn reference implementations.
+    \item A shared benchmarking framework for measuring runtime and peak memory usage consistently across all methods.
+    \item Synthetic dataset generators supporting correlated, uncorrelated, low-rank, and non-linear data distributions with configurable size and     dimensionality.
+    \item A systematic analysis of how each method scales with $n$ (number of observations) and $d$ (number of features), including identification of the regimes in which the standard approach becomes impractical.
+    \item A numerical stability analysis that evaluates the sensitivity to input noise.
+\end{itemize}
+
+% ====================================================================
+\section{Methods}
+% ====================================================================
+
+\subsection{Synthetic Data Generation}
+
+Controlled experimentation requires datasets where the number of observations $n$ and number of features $d$ can be varied independently. Four types of synthetic datasets are generated.
+\smallskip
+
+\textbf{Correlated data} is produced by sampling from a multivariate Gaussian distribution with a specified covariance structure, ensuring that features exhibit known linear correlations. 
+\smallskip
+
+\textbf{Uncorrelated data} is sampled from a diagonal covariance matrix so that features are independent.
+\smallskip
+
+\textbf{Low-rank data} is generated by constructing a data matrix as a product of low-rank factors plus Gaussian noise, producing data that lies approximately on a low-dimensional subspace. 
+\smallskip 
+
+\textbf{Non-linear data} is generated as concentric hyperspherical shells in two or three dimensions, providing a case where linear PCA cannot recover the true low-dimensional
+structure.
+\smallskip
+
+Each generator accepts parameters for the number of samples $n$, number of features $d$, noise level $\sigma$, and a random seed for reproducibility.
+
+% --------------------------------------------------------------------
+\subsection{PCA by Eigendecomposition of the Covariance Matrix}
+% --------------------------------------------------------------------
+
+The classical approach to PCA computes the covariance matrix of the centred
+data and performs eigendecomposition to obtain the principal component
+directions.
+
+Given a data matrix $\mathbf{X} \in \mathbb{R}^{n \times d}$ with zero-mean
+columns, the covariance matrix is:
+\begin{align}
+    \mathbf{C} = \frac{1}{n-1} \mathbf{X}^\top \mathbf{X} \label{eq:cov}
+\end{align}
+The principal components are the eigenvectors $\mathbf{v}_i$ satisfying
+$\mathbf{C}\mathbf{v}_i = \lambda_i \mathbf{v}_i$, where $\lambda_i$ are
+the corresponding eigenvalues. Eigenvectors are sorted in descending order
+of eigenvalue, and the data is projected as
+$\mathbf{X}_{\text{reduced}} = \mathbf{X}\mathbf{V}_k$, where
+$\mathbf{V}_k$ contains the top $k$ eigenvectors.
+
+\textbf{Complexity:} Time $O(nd^2 + d^3)$; Space $O(d^2)$ for the covariance
+matrix.
+
+% --------------------------------------------------------------------
+\subsection{PCA by Singular Value Decomposition}
+% --------------------------------------------------------------------
+
+SVD decomposes the centred data matrix directly, avoiding explicit computation
+of the covariance matrix and offering improved numerical stability:
+\begin{align}
+    \mathbf{X}_c = \mathbf{U} \boldsymbol{\Sigma} \mathbf{V}^\top \label{eq:svd}
+\end{align}
+where $\mathbf{U} \in \mathbb{R}^{n \times n}$ and
+$\mathbf{V} \in \mathbb{R}^{d \times d}$ are orthogonal matrices of left and
+right singular vectors respectively, and $\boldsymbol{\Sigma}$ is a diagonal
+matrix of singular values $\sigma_i$. The right singular vectors $\mathbf{V}$
+are identical to the eigenvectors of the covariance matrix, with the
+relationship $\lambda_i = \sigma_i^2 / (n-1)$~\citep{greenacre_pca_2022}.
+The reduced representation using the top $k$ components is
+$\mathbf{X}_{\text{reduced}} = \mathbf{U}_k \boldsymbol{\Sigma}_k$.
+
+\textbf{Complexity:} Time $O(\min(n,d)^2 \cdot \max(n,d))$; Space $O(nd)$.
+
+% --------------------------------------------------------------------
+\subsection{Kernel PCA}
+% --------------------------------------------------------------------
+
+Standard PCA is restricted to identifying linear structure. When the underlying data distribution is non-linear (for example, concentric shells or spiral manifolds) linear PCA fails to recover meaningful low-dimensional representations. Kernel PCA, introduced by~\citet{scholkopf1997kernel}, addresses this by implicitly mapping the data into a high-dimensional feature space using a kernel function, then performing linear PCA in that space.
+
+\subsubsection*{Mathematical Formulation}
+
+Let $\Phi : \mathbb{R}^d \to F$ denote an implicit nonlinear mapping from input space into a feature space $F$, which may have arbitrarily high dimensionality. The covariance matrix in $F$ is:
+\begin{align}
+    \tilde{\mathbf{C}} = \frac{1}{N} \sum_{j=1}^{N}
+    \Phi(\mathbf{x}_j)\Phi(\mathbf{x}_j)^\top
+\end{align}
+All solutions of the eigenvalue problem $\lambda \mathbf{V} =
+\tilde{\mathbf{C}}\mathbf{V}$ lie in the span of
+$\Phi(\mathbf{x}_1), \ldots, \Phi(\mathbf{x}_N)$, so we may write
+$\mathbf{V} = \sum_{i=1}^{N} \alpha_i \Phi(\mathbf{x}_i)$. This leads to
+the equivalent eigenvalue problem on the $N \times N$ kernel matrix
+$\mathbf{K}$:
+\begin{align}
+    N\lambda\boldsymbol{\alpha} = \mathbf{K}\boldsymbol{\alpha} \label{eq:kpca}
+\end{align}
+where entries of $\mathbf{K}$ are defined by a kernel function
+$K_{ij} = k(\mathbf{x}_i, \mathbf{x}_j) = \langle\Phi(\mathbf{x}_i),
+\Phi(\mathbf{x}_j)\rangle$. The kernel function computes dot products in $F$
+without explicitly evaluating $\Phi$ --- this is the kernel trick. In this
+implementation the RBF kernel is used:
+\begin{align}
+    k(\mathbf{x}, \mathbf{y}) = \exp\left(-\gamma \|\mathbf{x} -
+    \mathbf{y}\|^2\right)
+\end{align}
+where $\gamma > 0$ controls the width of the kernel. Since the mapped data
+cannot in general be centred directly in $F$, the kernel matrix is centred
+analytically:
+\begin{align}
+    \mathbf{K}_c = \mathbf{K} - \mathbf{1}_N\mathbf{K}
+    - \mathbf{K}\mathbf{1}_N + \mathbf{1}_N\mathbf{K}\mathbf{1}_N
+    \label{eq:kcentre}
+\end{align}
+where $\mathbf{1}_N$ is the $N \times N$ matrix with all entries $1/N$. The
+projection of a test point $\mathbf{x}$ onto the $k$-th principal component
+in $F$ is:
+\begin{align}
+    \left(\mathbf{V}^k \cdot \Phi(\mathbf{x})\right)
+    = \sum_{i=1}^{N} \alpha_i^k \, k(\mathbf{x}_i, \mathbf{x})
+\end{align}
+
+\subsubsection*{Implementation}
+
+The baseline implementation follows~\citet{scholkopf1997kernel} directly.
+Pairwise squared Euclidean distances are computed using
+\texttt{scipy.spatial.distance}, the RBF kernel matrix is constructed,
+analytically centred using Eq.~\ref{eq:kcentre}, and the eigenvalue problem
+is solved using \texttt{scipy.linalg.eigh}. Eigenvectors are sorted in
+descending order of eigenvalue, negative eigenvalues arising from numerical
+noise are clipped to zero, and the top $k$ components are returned scaled by
+the square root of their eigenvalues to produce projections comparable with
+Scikit-learn's \texttt{KernelPCA}.
+
+\subsubsection*{Computational Complexity}
+
+The standard Kernel PCA algorithm has time complexity $O(N^2 d)$ for computing
+the kernel matrix and $O(N^3)$ for the eigendecomposition, giving an overall
+complexity of $O(N^3)$ for large $N$. The space complexity is $O(N^2)$ for
+storing the full kernel matrix. This quadratic memory requirement is the
+primary practical bottleneck: for $N = 10{,}000$ points, the kernel matrix
+requires approximately 800~MB, making the standard algorithm infeasible for
+large datasets.
+
+\subsubsection*{Algorithmic Improvement}
+
+To address the scalability limitations of standard Kernel PCA,
+\citet{zheng2005improved} proposed an improved algorithm that avoids storing
+the full $N \times N$ kernel matrix by partitioning the dataset into $M$
+subsets and solving a reduced eigenvalue problem on a compressed kernel matrix
+of size $\tilde{N} \times \tilde{N}$, where $\tilde{N} = M \cdot p \ll N$.
+
+We tried to adopt this algorithm to improve our Kernel PCA algorithm, but were not successful due to time constraints in completing the project. 
+
+\subsubsection*{Correctness Verification}
+
+The baseline implementation is verified against Scikit-learn's \texttt{KernelPCA} with an RBF kernel on non-linear synthetic dataset. Agreement is assessed using mean squared difference between projections, and difference in explained variance.
+
+\subsubsection*{Numerical Stability Analysis}
+
+Numerical stability is assessed in terms of sensitivity to input noise: Gaussian noise of increasing standard deviation $\sigma$ is
+added to a clean dataset, and the change in explained variance ratio and projections between the clean and noisy solutions is recorded. Subspace
+alignment is measured as the mean squared cosine of the principal angles between the two subspaces. 
+
+% --------------------------------------------------------------------
+\subsection{Randomized PCA}
+% --------------------------------------------------------------------
+
+Randomized PCA~\citep{halko2011finding} uses random projections to efficiently
+estimate the top-$k$ singular vectors without computing a full SVD, making it
+well-suited to large datasets where only a small number of components are
+needed.
+
+A random projection matrix $\boldsymbol{\Omega} \in \mathbb{R}^{d \times
+(k+p)}$ is drawn from a standard Gaussian distribution, where $p$ is an
+oversampling parameter. The data is projected as
+$\mathbf{Y} = \mathbf{X}_c \boldsymbol{\Omega}$, and an orthonormal basis
+$\mathbf{Q}$ for the column space of $\mathbf{Y}$ is obtained via QR
+decomposition. The data is then projected onto this basis:
+$\mathbf{B} = \mathbf{Q}^\top \mathbf{X}_c$, and a standard SVD is performed
+on the smaller matrix $\mathbf{B}$. The left singular vectors of $\mathbf{X}_c$
+are recovered as $\mathbf{U} = \mathbf{Q}\mathbf{U}_B$.
+
+\textbf{Complexity:} Time $O(ndk)$; Space $O(nk + dk)$. Substantially faster
+than full SVD for $k \ll \min(n, d)$, trading a small approximation error for
+a large computational gain.
+
+% --------------------------------------------------------------------
+\subsection{Incremental PCA}
+% --------------------------------------------------------------------
+
+Incremental PCA processes data in mini-batches of size $b$, updating the
+principal components as each batch arrives. This makes it suitable for
+datasets too large to fit in memory and for streaming data scenarios.
+
+For each batch $\mathbf{X}_{\text{batch}}$, the running mean is updated and
+the batch is centred. The previous component matrix is augmented with the new
+batch data and a truncated SVD is performed on the augmented matrix, retaining
+only the top $k$ components for the next iteration.
+
+\textbf{Complexity:} Time $O(bdk)$ per batch, $O(ndk/b)$ total; Space
+$O(bd + kd)$, constant in $n$.
+
+% --------------------------------------------------------------------
+\subsection{Sparse PCA}
+% --------------------------------------------------------------------
+
+Sparse PCA~\citep{zou2006sparse} produces principal components with sparse
+loadings by introducing an L1 penalty on the component coefficients,
+formulated as an optimisation problem:
+\begin{align}
+    \min_{\mathbf{U}, \mathbf{V}} \,
+    \|\mathbf{X} - \mathbf{U}\mathbf{V}^\top\|_F^2
+    + \alpha \|\mathbf{V}\|_1
+    \quad \text{s.t.} \quad \|\mathbf{u}_i\|_2 \leq 1
+\end{align}
+The L1 penalty forces most component weights to exactly zero, so each
+principal component depends on only a small subset of the original features,
+improving interpretability at a small cost in explained variance. The problem
+is solved iteratively using coordinate descent.
+
+\textbf{Complexity:} Time $O(ndk \cdot \text{iter})$; Space $O(nk + dk)$.
+
+% ====================================================================
+\section{Results}
+% ====================================================================
+
+\subsection{Correctness Verification}
+
+Each implementation is compared against its Scikit-learn counterpart on a shared set of test datasets. Agreement is measured by the mean squared difference between projections (after correcting for sign ambiguity) and the difference in explained variance ratios. Results are presented in Table~\ref{tab:correctness}.
+
+\begin{figure}[tbp]
+    \begin{center}
+        % \includegraphics[width=0.75\textwidth]{./figs/correctness.png}
+        % \caption{Comparison of projections from manual and Scikit-learn
+        % implementations across all six PCA methods.}
+        % \label{fig:correctness}
+    \end{center}
+\end{figure}
+
+\subsection{Scaling Behaviour}
+
+Scaling experiments are conducted by varying $n$ with fixed $d = 50$, and
+varying $d$ with fixed $n = 1{,}000$. Runtime and peak memory usage are
+recorded for each method and dataset size.
+
+\begin{figure}[tbp]
+    \begin{center}
+        % \includegraphics[width=0.75\textwidth]{./figs/scaling.png}
+        % \caption{Runtime (left) and memory usage (right) as a function of
+        % $n$ for all six PCA methods.}
+        % \label{fig:scaling}
+    \end{center}
+\end{figure}
+
+Standard Eigendecomposition and Kernel PCA are expected to exhibit cubic
+scaling in $n$, becoming impractical at $n \gtrsim 10{,}000$ and
+$n \gtrsim 5{,}000$ respectively due to memory and time constraints. Randomized
+and Incremental PCA are expected to scale approximately linearly in $n$ for
+fixed $k$. Results confirming these predictions, including the specific dataset
+size at which each method becomes infeasible, are presented here.
+
+\subsection{Numerical Stability of Kernel PCA}
+
+The numerical stability of the Kernel PCA implementation is assessed under
+two conditions: varying input noise and varying kernel hyperparameter $\gamma$.
+Figure~\ref{fig:stability} shows the explained variance ratio of the top $k$
+components and the subspace alignment score as functions of noise level and
+$\gamma$ respectively.
+
+\begin{figure}[tbp]
+    \begin{center}
+        % \includegraphics[width=0.75\textwidth]{./figs/stability.png}
+        % \caption{Left: explained variance ratio vs noise level.
+        %          Right: condition number of kernel matrix vs $\gamma$.}
+        % \label{fig:stability}
+    \end{center}
+\end{figure}
+
+\subsection{Impractical Regime: Standard Kernel PCA}
+
+As an explicit demonstration of the project requirement to identify a case
+where a standard PCA approach becomes impractical, the standard Kernel PCA
+implementation is run on datasets of increasing size until memory allocation
+fails or runtime exceeds a fixed budget. The improved algorithm
+of~\citet{zheng2005improved} is then applied to the same datasets, confirming
+that it successfully processes sizes beyond the reach of the standard method.
+
+\subsection{Algorithmic Revision: Kernel PCA Profiling}
+
+Profiling the baseline Kernel PCA implementation using \texttt{cProfile}
+reveals that the dominant cost is the pairwise distance computation and
+subsequent kernel matrix construction, followed by the eigendecomposition.
+For $N = 3{,}000$ the naive nested-loop distance computation accounts for the
+majority of runtime. Replacing this with a vectorised computation using the
+identity $\|\mathbf{x}_i - \mathbf{x}_j\|^2 = \|\mathbf{x}_i\|^2 +
+\|\mathbf{x}_j\|^2 - 2\mathbf{x}_i^\top\mathbf{x}_j$ reduces runtime
+substantially. Runtime before and after this revision is reported as the
+primary profiling-driven improvement, alongside the block-partitioning
+improvement of~\citet{zheng2005improved}.
+
+% ====================================================================
+\section{Conclusion and Outlook}
+% ====================================================================
+
+This report presented a systematic comparison of six PCA implementations
+across dimensions of correctness, computational complexity, empirical
+performance, and numerical stability. The results confirm that no single
+method dominates across all settings: the choice of PCA algorithm depends
+strongly on the structure of the data, the available memory, and the number
+of components required.
+
+For small to medium datasets with $n \ll d$, Eigendecomposition is
+straightforward and exact. For large datasets with moderate $d$, SVD offers
+better numerical stability and similar cost. When only a small number of
+components are needed from a large dataset, Randomized PCA offers substantial
+speedups with negligible loss of accuracy. Incremental PCA is the method of
+choice when data cannot fit in memory or arrives as a stream. Sparse PCA is
+appropriate when interpretability of components is important and some loss of
+explained variance is acceptable. Kernel PCA is uniquely suited to non-linear
+data but requires careful management of its quadratic memory cost; the improved
+algorithm of~\citet{zheng2005improved} significantly extends its practical
+range.
+
+Future work could explore adaptive selection of the kernel hyperparameter
+$\gamma$ for Kernel PCA, integration of the Nystr\"{o}m approximation as
+a further memory reduction strategy, and extension of the benchmarking
+framework to real-world high-dimensional datasets in genomics, image
+processing, and natural language processing.
+
+% ====================================================================
+\section{Acknowledgements}
+% ====================================================================
+
+The authors thank the teaching staff of DS3294: Data Science Practice for
+their guidance and for providing the project brief and report template.
+
+% ====================================================================
+\section{Author Contributions}
+% ====================================================================
+
+\textbf{Aurokrupa Sahoo:} PCA by Eigendecomposition, PCA by SVD, Sparse PCA
+implementation, correctness verification, and complexity analysis.
+\textbf{Anshita Singh:} Kernel PCA implementation (baseline and improved),
+numerical stability analysis, non-linear data generation.
+\textbf{Debagnik Das:} Randomized PCA implementation, scaling experiments,
+and benchmarking framework.
+\textbf{Sadekar Suchet Samir:} Incremental PCA implementation, correlated,
+uncorrelated, and low-rank data generation, and memory profiling.
+All authors contributed to the comparative review and writing.
+
+% ====================================================================
+\section{Code availability}
+% ====================================================================
+
+The code for this project is available at the following GitHub repository:
+\url{https://github.com/team17/comparative-pca}.
+
+% ====================================================================
+\section{References}
+\bibliography{refs}
+% ====================================================================
+
+% ====================================================================
+\section{Appendix}
+% ====================================================================
+
+\subsection{Additional Figures}
+
+Additional scaling plots for the $d$-varying experiments and full numerical
+stability curves across all noise levels are provided here.
+
+\subsection{Algorithms}
+
+\begin{minipage}{0.85\textwidth}
+\begin{algorithm}[H]
+\caption{Baseline Kernel PCA}\label{alg:kpca}
+\begin{algorithmic}
+\Require Data matrix $X \in \mathbb{R}^{N \times d}$, kernel parameter
+$\gamma$, number of components $k$
+\Ensure Projections $\boldsymbol{\alpha} \in \mathbb{R}^{N \times k}$,
+eigenvalues $\boldsymbol{\lambda}$
+\State Compute $K_{ij} = \exp(-\gamma \|x_i - x_j\|^2)$ for all $i, j$
+\State Centre: $K_c \gets K - \mathbf{1}_N K - K \mathbf{1}_N +
+\mathbf{1}_N K \mathbf{1}_N$
+\State Compute eigendecomposition: $K_c \mathbf{V} =
+\boldsymbol{\Lambda}\mathbf{V}$
+\State Sort eigenpairs by descending eigenvalue; clip negatives to zero
+\State $\boldsymbol{\lambda} \gets$ top $k$ eigenvalues;
+$\boldsymbol{\alpha} \gets$ corresponding eigenvectors $\times
+\sqrt{\boldsymbol{\lambda}}$
+\end{algorithmic}
+\end{algorithm}
+\end{minipage}
+
+
+\subsection{Complexity Summary}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\hline
+\textbf{Method} & \textbf{Time Complexity} & \textbf{Space Complexity} \\
+\hline
+Eigendecomposition & $O(nd^2 + d^3)$ & $O(d^2)$ \\
+SVD               & $O(\min(n,d)^2 \cdot \max(n,d))$ & $O(nd)$ \\
+Kernel PCA        & $O(N^3)$ & $O(N^2)$ \\
+Randomized PCA    & $O(ndk)$ & $O(nk + dk)$ \\
+Incremental PCA   & $O(bdk)$ per batch & $O(bd + kd)$ \\
+Sparse PCA        & $O(ndk \cdot \text{iter})$ & $O(nk + dk)$ \\
+\hline
+\end{tabular}
+\caption{Theoretical time and space complexity of each PCA method.
+$n$: number of observations; $d$: number of features; $k$: number of
+components; $b$: batch size; $N$: number of samples (Kernel PCA);
+$\tilde{N} = Mp$: compressed kernel dimension.}
+\label{tab:complexity}
+\end{table}
+
+\end{document}
