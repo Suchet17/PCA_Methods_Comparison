@@ -133,6 +133,6 @@ if __name__ == "__main__":
 
   fig.colorbar(image, ax=ax[2], label='Sphere Index (Inner to Outer)')
 
-fig.suptitle(f"Data: concentric n-dimensional hypersphers\nn: {n}, k: {k}, noise: {noise}, gamma: {gamma}")
-plt.tight_layout()
-plt.show()
+  fig.suptitle(f"Data: concentric n-dimensional hypersphers\nn: {n}, k: {k}, noise: {noise}, gamma: {gamma}")
+  plt.tight_layout()
+  plt.show()

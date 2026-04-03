@@ -71,75 +71,75 @@ def randomized_pca(X, k, oversample=5):
     return U_k, S_k, Vt_k, evr
 
 
+if __name__ == '__main__':
+    # GENERATE DATA
 
-# GENERATE DATA
+    np.random.seed(42)
 
-np.random.seed(42)
+    n = 1000   # samples
+    d = 50     # features
 
-n = 1000   # samples
-d = 50     # features
+    k = int(input("Enter number of principal components: "))
 
-k = int(input("Enter number of principal components: "))
+    # Random data
+    X = np.random.randn(n, d)
 
-# Random data
-X = np.random.randn(n, d)
+    # Add some correlation (moderate, not extreme)
+    X[:, 1] = X[:, 0] * 2 + np.random.randn(n) * 0.1
+    X[:, 2] = X[:, 0] * -1.5 + np.random.randn(n) * 0.1
 
-# Add some correlation (moderate, not extreme)
-X[:, 1] = X[:, 0] * 2 + np.random.randn(n) * 0.1
-X[:, 2] = X[:, 0] * -1.5 + np.random.randn(n) * 0.1
-
-# Standardize
-X_std = standardize(X)
-
-
-
-# RUN RANDOMIZED PCA
-
-start = time.time()
-X_rpca, S_rpca, Vt_rpca, evr_rpca = randomized_pca(X_std, k)
-rpca_time = time.time() - start
+    # Standardize
+    X_std = standardize(X)
 
 
-# RUN NORMAL PCA
-start = time.time()
-X_pca, S_pca, Vt_pca, evr_pca = normal_pca(X_std, k)
-pca_time = time.time() - start
+
+    # RUN RANDOMIZED PCA
+
+    start = time.time()
+    X_rpca, S_rpca, Vt_rpca, evr_rpca = randomized_pca(X_std, k)
+    rpca_time = time.time() - start
 
 
-# PRINT RESULTS
-
-print("\nPrincipal Components (Randomized PCA):\n", Vt_rpca)
-print("\nPrincipal Components (Normal PCA):\n", Vt_pca)
-
-print("\nRandomized PCA Singular Values:", S_rpca)
-print("Randomized PCA EVR:", evr_rpca)
-
-print("\nNormal PCA Singular Values:", S_pca)
-print("Normal PCA EVR:", evr_pca)
-
-print(f"\nRandomized PCA Time: {rpca_time:.5f} sec")
-print(f"Normal PCA Time: {pca_time:.5f} sec")
-
-# Difference check (important for validation)
-print("\nDifference in EVR:", np.abs(evr_pca - evr_rpca))
+    # RUN NORMAL PCA
+    start = time.time()
+    X_pca, S_pca, Vt_pca, evr_pca = normal_pca(X_std, k)
+    pca_time = time.time() - start
 
 
-# VISUALIZATION
+    # PRINT RESULTS
 
-fig, ax = plt.subplots(1, 2, figsize=(12, 5))
+    print("\nPrincipal Components (Randomized PCA):\n", Vt_rpca)
+    print("\nPrincipal Components (Normal PCA):\n", Vt_pca)
 
-# Randomized PCA
-ax[0].scatter(X_rpca[:, 0], X_rpca[:, 1], alpha=0.5, edgecolor='k')
-ax[0].set_title(f"Randomized PCA\nPC1: {evr_rpca[0]:.2%}, PC2: {evr_rpca[1]:.2%}")
-ax[0].set_xlabel("PC1")
-ax[0].set_ylabel("PC2")
+    print("\nRandomized PCA Singular Values:", S_rpca)
+    print("Randomized PCA EVR:", evr_rpca)
 
-# Normal PCA
-ax[1].scatter(X_pca[:, 0], X_pca[:, 1], alpha=0.5, edgecolor='k')
-ax[1].set_title(f"Normal PCA\nPC1: {evr_pca[0]:.2%}, PC2: {evr_pca[1]:.2%}")
-ax[1].set_xlabel("PC1")
-ax[1].set_ylabel("PC2")
+    print("\nNormal PCA Singular Values:", S_pca)
+    print("Normal PCA EVR:", evr_pca)
 
-plt.suptitle("Randomized PCA vs Normal PCA")
-plt.tight_layout()
-plt.show()
+    print(f"\nRandomized PCA Time: {rpca_time:.5f} sec")
+    print(f"Normal PCA Time: {pca_time:.5f} sec")
+
+    # Difference check (important for validation)
+    print("\nDifference in EVR:", np.abs(evr_pca - evr_rpca))
+
+
+    # VISUALIZATION
+
+    fig, ax = plt.subplots(1, 2, figsize=(12, 5))
+
+    # Randomized PCA
+    ax[0].scatter(X_rpca[:, 0], X_rpca[:, 1], alpha=0.5, edgecolor='k')
+    ax[0].set_title(f"Randomized PCA\nPC1: {evr_rpca[0]:.2%}, PC2: {evr_rpca[1]:.2%}")
+    ax[0].set_xlabel("PC1")
+    ax[0].set_ylabel("PC2")
+
+    # Normal PCA
+    ax[1].scatter(X_pca[:, 0], X_pca[:, 1], alpha=0.5, edgecolor='k')
+    ax[1].set_title(f"Normal PCA\nPC1: {evr_pca[0]:.2%}, PC2: {evr_pca[1]:.2%}")
+    ax[1].set_xlabel("PC1")
+    ax[1].set_ylabel("PC2")
+
+    plt.suptitle("Randomized PCA vs Normal PCA")
+    plt.tight_layout()
+    plt.show()
