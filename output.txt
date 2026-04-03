@@ -1,0 +1,109 @@
+============================================================
+  RANDOMIZED PCA - ANALYSES
+============================================================
+
+[0] Correctness - Randomized PCA vs. Sklearn (randomized SVD)
+
+
+Manual Randomized PCA vs Sklearn Reference
+--------------------------------------------------------------------------------
+projection_distance                : 0.09697916201654948
+component_distance                 : 0.24944392639502472
+subspace_similarity                : 0.9688888637923168
+subspace_overlap                   : 0.9690620974016806
+explained_variance_distance        : 0.16689923045253574
+test_reconstruction_error          : 0.6619104522084088
+reference_reconstruction_error     : 0.6498911207767902
+reconstruction_error_gap           : 0.012019331431618596
+--------------------------------------------------------------------------------
+
+[1] Efficiency - Randomized PCA
+
+
+Randomized PCA runtime
+(n-dim hyperspheres; n=1000, d=50, noise=0.01, repeats=10)
+----------------------------------------
+Mean Time   : 0.025680 sec
+Median Time : 0.020873 sec
+Std Dev     : 0.012168 sec
+Min Time    : 0.016810 sec
+Max Time    : 0.058894 sec
+----------------------------------------
+
+Randomized PCA memory usage
+(n-dim hyperspheres; n=1000, d=50, noise=0.01, repeats=10)
+--------------------------------------------------
+Mean Peak Memory : 1.280765 MiB
+Std Dev          : 0.000009 MiB
+Min Peak Memory  : 1.280762 MiB
+Max Peak Memory  : 1.280792 MiB
+--------------------------------------------------
+
+[2] Numerical Stability - Randomized PCA
+
+  Noise: 1.00e-06 | Proj dist: 0.101008 | EVR dist: 0.092528
+  Noise: 1.00e-05 | Proj dist: 0.106833 | EVR dist: 0.075686
+  Noise: 1.00e-04 | Proj dist: 0.153709 | EVR dist: 0.060557
+  Noise: 1.00e-03 | Proj dist: 0.072188 | EVR dist: 0.024964
+  Noise: 1.00e-02 | Proj dist: 0.211448 | EVR dist: 0.174355
+  Noise: 1.00e-01 | Proj dist: 0.134228 | EVR dist: 0.029630
+
+[3] Scaling Behaviour - Randomized PCA
+
+  Visualising scaling with n (sample count):
+  Visualising scaling with d (dimensionality):
+
+============================================================
+  INCREMENTAL PCA - ANALYSES
+============================================================
+
+[0] Correctness - Incremental PCA vs. Sklearn IncrementalPCA
+
+
+Manual Incremental PCA vs Sklearn Reference
+--------------------------------------------------------------------------------
+projection_distance                : 3.9256527020371475e-16
+component_distance                 : 5.55874721528091e-16
+subspace_similarity                : 1.0
+subspace_overlap                   : 1.0
+explained_variance_distance        : 0.0010010010009994016
+test_reconstruction_error          : 0.6499003555281219
+reference_reconstruction_error     : 0.6499003555281219
+reconstruction_error_gap           : 0.0
+--------------------------------------------------------------------------------
+
+[1] Efficiency - Incremental PCA
+
+
+Incremental PCA runtime
+(n-dim hyperspheres; n=1000, d=50, noise=0.01, repeats=10)
+----------------------------------------
+Mean Time   : 0.059267 sec
+Median Time : 0.055594 sec
+Std Dev     : 0.015072 sec
+Min Time    : 0.036737 sec
+Max Time    : 0.086315 sec
+----------------------------------------
+
+Incremental PCA memory usage
+(n-dim hyperspheres; n=1000, d=50, noise=0.01, repeats=10)
+--------------------------------------------------
+Mean Peak Memory : 0.863049 MiB
+Std Dev          : 0.000028 MiB
+Min Peak Memory  : 0.863037 MiB
+Max Peak Memory  : 0.863129 MiB
+--------------------------------------------------
+
+[2] Numerical Stability - Incremental PCA
+
+  Noise: 1.00e-06 | Proj dist: 0.000000 | EVR dist: 0.000000
+  Noise: 1.00e-05 | Proj dist: 0.000003 | EVR dist: 0.000000
+  Noise: 1.00e-04 | Proj dist: 0.000027 | EVR dist: 0.000001
+  Noise: 1.00e-03 | Proj dist: 0.000269 | EVR dist: 0.000007
+  Noise: 1.00e-02 | Proj dist: 0.002685 | EVR dist: 0.000038
+  Noise: 1.00e-01 | Proj dist: 0.026824 | EVR dist: 0.008719
+
+[3] Scaling Behaviour - Incremental PCA
+
+  Visualising scaling with n (sample count):
+  Visualising scaling with d (dimensionality):
