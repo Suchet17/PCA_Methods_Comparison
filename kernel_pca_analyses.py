@@ -129,7 +129,7 @@ if __name__ == "__main__":
 
   # with n
   sample_sizes = [100, 200, 500, 1000, 2000, 5000]
-  n_dims = 10
+  n_dims = 50
   sample_results = evaluate_scaling(method_configs=configs, sizes=sample_sizes, vary="samples", n_features=n_dims)
   print("\nVisualisng scaling behaviour as dataset size (n) increases:")
   plot_scaling(sample_results, metric="time", title="Runtime (with varying n)", xlabel="No. of samples (n)")
@@ -137,7 +137,7 @@ if __name__ == "__main__":
 
   # with d
   feature_sizes = [2, 5, 10, 50, 100, 1000]
-  n_samples = 500
+  n_samples = 1000
   feature_results = evaluate_scaling(method_configs=configs, sizes=feature_sizes, vary="features", n_samples=n_samples)
   print("\nVisualising scaling behaviour as dimensionality (d) increases:")
   plot_scaling(feature_results, metric="time", title="Runtime (with varying d)", xlabel="No. of features (d)")
